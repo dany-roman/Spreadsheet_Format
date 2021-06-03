@@ -1,0 +1,429 @@
+Sub CSSPrep():
+
+' Removed Unnecessary columns after Ops column
+
+Range("T:AZ").EntireColumn.Delete
+    
+' Insert additional columns
+    Range("D:G").Insert
+    Range("L:L").Insert
+    Range("N:O").Insert
+    Range("U:AF").Insert
+    Range("AH:AJ").Insert
+    Range("AL:AM").Insert
+    
+' Change headers to match CSS spreadsheet
+        
+    Cells(1, 1).Value = "Order_ID"
+    Cells(1, 2).Value = "Date"
+    Cells(1, 3).Value = "Client_Full_Name"
+    Cells(1, 4).Value = "Client_Last_Name"
+    Cells(1, 5).Value = "Client_First_Name"
+    Cells(1, 6).Value = "Company"
+    Cells(1, 7).Value = "Email"
+    Cells(1, 8).Value = "New_Client"
+    Cells(1, 9).Value = "Country"
+    Cells(1, 10).Value = "Discount"
+    Cells(1, 11).Value = "Doc.Type"
+    Cells(1, 12).Value = "Doc.Category"
+    Cells(1, 13).Value = "Serv.Type"
+    Cells(1, 14).Value = "Serv.Category"
+    Cells(1, 15).Value = "Estimate_Doc"
+    Cells(1, 16).Value = "Word_Count"
+    Cells(1, 17).Value = "Time_Estimate"
+    Cells(1, 18).Value = "Time_Editing"
+    Cells(1, 19).Value = "Time_Billed"
+    Cells(1, 20).Value = "Fees_Extra"
+    Cells(1, 21).Value = "Support_Service"
+    Cells(1, 22).Value = "Supp_Rush"
+    Cells(1, 23).Value = "Supp_OTD"
+    Cells(1, 24).Value = "Supp_Jour.Rec"
+    Cells(1, 25).Value = "Supp_Jour.Sub"
+    Cells(1, 26).Value = "Supp_Cover.Letter"
+    Cells(1, 27).Value = "Supp_Grant.Review"
+    Cells(1, 28).Value = "Supp_Re-edit"
+    Cells(1, 29).Value = "Sale_Total_Support"
+    Cells(1, 30).Value = "Time_Rev"
+    Cells(1, 31).Value = "Time_OTH"
+    Cells(1, 32).Value = "Sale_Estimate"
+    Cells(1, 33).Value = "Sale_Billed"
+    Cells(1, 34).Value = "Margin_Order"
+    Cells(1, 35).Value = "Margin_Lifetime"
+    Cells(1, 36).Value = "Orders_Lifetime"
+    Cells(1, 37).Value = "Date_OpsReturn"
+    Cells(1, 38).Value = "Date_Paid"
+    Cells(1, 39).Value = "Days_to_Payment"
+    Cells(1, 40).Value = "Target_Journal"
+    Cells(1, 41).Value = "Editor_1"
+    Cells(1, 42).Value = "Editor_2"
+    Cells(1, 43).Value = "Ops"
+    
+' Sort Spreadsheet by Date_OpsReturn
+
+    With ActiveSheet.Sort
+    
+     .SortFields.Add Key:=Range("A1"), Order:=xlAscending
+     .SetRange Range("A1:AZ2000")
+     .Header = xlYes
+     .Apply
+     
+    End With
+
+' Delete all rows with no orders
+
+     Columns("A:A").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+
+' Delete all orders with no sale_billing
+
+     Columns("AG:AG").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+
+' Sort Spreadsheet by Date_OpsReturn
+
+    With ActiveSheet.Sort
+    
+     .SortFields.Add Key:=Range("AK1"), Order:=xlAscending
+     .SetRange Range("A1:AZ2000")
+     .Header = xlYes
+     .Apply
+
+    End With
+     
+' Change all ABC client names to "ABC Inc." and split full name into first and last name
+
+    Dim fullname, firstname, lastname As String
+    Dim row, Lrow, comma As Integer
+    
+    Lrow = Cells(Rows.Count, 1).End(xlUp).row
+    
+    For row = 2 To Lrow
+    
+        fullname = Cells(row, 3).Value
+        
+        If fullname = "ABC" Then
+            
+            fullname = "ABC Inc."
+            Cells(row, 3).Value = fullname
+            
+        End If
+    
+    Next row
+        
+    For row = 2 To Lrow
+        
+        fullname = Cells(row, 3).Value
+        lastname = Cells(row, 4).Value
+        firstname = Cells(row, 5).Value
+        
+        comma = InStr(fullname, ",")
+        commaRLI = InStr(lastname, "-")
+        
+        firstname = Mid(fullname, comma + 2)
+        lastname = Left(fullname, comma - 1)
+        
+        Cells(row, 4).Value = lastname
+        Cells(row, 5).Value = firstname
+
+     Next row
+
+' On New client change all Xs to New Client and all null to Returning Client
+
+    Dim newstatus As String
+    
+    newstatus = Cells(row, 8).Value
+
+    For row = 2 To Lrow
+    
+        If Cells(row, 8).Value = "X" Then
+            
+            newstatus = "New Client"
+            Cells(row, 8).Value = newstatus
+            
+        Else
+            
+            newstatus = "Returning Client"
+            Cells(row, 8).Value = newstatus
+
+        End If
+
+    Next row
+
+' if country is blank, usc, bcm, or ucsf change country to united states
+
+    Dim country As String
+    
+    For row = 2 To Lrow
+    
+        country = Cells(row, 9).Value
+        
+        If country = "" Or country = "USC" Or country = "BCM" Or country = "UCSF" Or country = "Einstein" Then
+            
+            country = "United States"
+            Cells(row, 9).Value = country
+            
+        End If
+        
+    Next row
+
+' Convert "-- Other --" to "Other"
+
+    Dim doctype As String
+    
+    For row = 2 To Lrow
+        
+        doctype = Cells(row, 11).Value
+        
+        If doctype = "-- Other --" Then
+            doctype = "Other"
+            Cells(row, 11).Value = doctype
+            
+        End If
+        
+    Next row
+
+' Set Document Category (grants, manuscripts, other) based on Doc. Type
+        
+    Dim doccategory As String
+     
+    For row = 2 To Lrow
+        
+        doctype = Cells(row, 11).Value
+        
+        If doctype = "Manuscript" Or doctype = "Review" Then
+            
+            doccategory = "Manuscripts"
+            Cells(row, 12).Value = doccategory
+            
+        ElseIf doctype = "Grant Proposal" Or doctype = "Grant Revisions" Then
+            
+            doccategory = "Grants"
+            Cells(row, 12).Value = doccategory
+            
+        Else
+            
+            doccategory = "Other"
+            Cells(row, 12).Value = doccategory
+            
+        End If
+        
+    Next row
+    
+' Convert "-- Edit as Needed --" to "4. Edit as Needed", "Writing" to "5. Writing", "Consulting" to "6. Consulting"
+
+    Dim servtype As String
+    
+    For row = 2 To Lrow
+        
+        servtype = Cells(row, 13).Value
+        
+        If servtype = "-- Edit as Needed --" Then
+            servtype = "4. Edit as Needed"
+            Cells(row, 13).Value = servtype
+        
+        ElseIf servtype = "Writing" Then
+            servtype = "5. Writing"
+            Cells(row, 13).Value = servtype
+            
+        ElseIf servtype = "Consulting" Then
+            servtype = "6. Consulting"
+            Cells(row, 13).Value = servtype
+            
+        End If
+        
+    Next row
+    
+' Set Service Category (basic, advanced, professional) based on Serv. Type
+
+    Dim servcategory As String
+    
+    For row = 2 To Lrow
+        
+        servtype = Cells(row, 13).Value
+        
+        If servtype = "1. Basic" Or servtype = "2. Advanced" Or servtype = "3. Professional" Or servtype = "4. Edit As Needed" Then
+            
+            doccategory = "Editing"
+            Cells(row, 14).Value = doccategory
+            
+        ElseIf servtype = "5. Writing" Then
+            
+            doccategory = "Writing & Consulting"
+            Cells(row, 14).Value = doccategory
+        
+        ElseIf servtype = "6. Consulting" Then
+            
+            doccategory = "Writing & Consulting"
+            Cells(row, 14).Value = doccategory
+        
+        Else
+            
+            doccategory = "Other"
+            Cells(row, 14).Value = doccategory
+            
+        End If
+        
+    Next row
+
+' Set Estimate_doc based on Est. Time cell formatting
+
+    Dim time_est_cell As Integer
+    
+    For row = 2 To Lrow
+        
+        time_est_cell = Cells(row, 17).Interior.ColorIndex
+        
+        If time_est_cell <> 2 Then
+            
+            Cells(row, 15).Value = "Yes"
+        
+        Else
+            
+            Cells(row, 15).Value = "No"
+            
+        End If
+        
+    Next row
+    
+' Set Support_Service column based on Fees_Extra (Identify all support services)
+
+    Dim suppserv As String
+    Dim extrafees As String
+      
+    For row = 2 To Lrow
+        
+        extrafees = Cells(row, 20).Value
+        suppserv = Cells(row, 21).Value
+        pricecheck = Cells(row, 33).Value
+        
+        If extrafees Like "*CL*" And extrafees Like "*JR*" And extrafees Like "*JS*" And extrafees Like "*OTD*" Then
+            
+            suppserv = "Cover Letter; Journal Recommendation; Journal Submission; OTD"
+            Cells(row, 21).Value = suppserv
+        
+        ElseIf extrafees Like "*OTD*" And extrafees Like "*CL*" Then
+            
+            suppserv = "OTD; Cover Letter"
+            Cells(row, 21).Value = suppserv
+        
+        ElseIf extrafees Like "*OTD*" And extrafees Like "*X*" Then
+            
+            suppserv = "OTD; Rush"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*OTD*" And extrafees Like "*X*" Then
+            
+            suppserv = "OTD; Rush"
+            Cells(row, 21).Value = suppserv
+                    
+        ElseIf extrafees Like "*CL*" And extrafees Like "*JR*" Then
+            
+            suppserv = "Cover Letter; Journal Recommendation"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*CL*" And extrafees Like "*JS*" Then
+            
+            suppserv = "Cover Letter; Journal Submission"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*X*" And pricecheck = 0 Then
+            
+            suppserv = "Cover Letter; Journal Recommendation"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*JR*" And extrafees Like "*JS*" Then
+            
+            suppserv = "Journal Submission; Journal Recommendation"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*CL*" And extrafees Like "*X*" Then
+            
+            suppserv = "Cover Letter; Rush"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*OTD*" Then
+            
+            suppserv = "OTD"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*GR*" Then
+            
+            suppserv = "Grant Review"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf pricecheck = 0 Then
+            
+            suppserv = "Re-Edit"
+            Cells(row, 21).Value = suppserv
+        
+        ElseIf extrafees Like "*X*" Then
+            
+            suppserv = "Rush"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*JR*" Then
+            
+            suppserv = "Journal Recommendation"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*JS*" Then
+            
+            suppserv = "Journal Submission"
+            Cells(row, 21).Value = suppserv
+            
+        ElseIf extrafees Like "*CL*" Then
+        
+            suppserv = "Cover Letter"
+            Cells(row, 21).Value = suppserv
+            
+        Else
+            
+            suppserv = "None"
+            Cells(row, 21).Value = suppserv
+            
+        End If
+        
+    Next row
+
+' Set Supp_Cover.Letter fee to $100 based on Support_Service column
+      
+    For row = 2 To Lrow
+        
+        suppserv = Cells(row, 21).Value
+        
+        If suppserv Like "Cover Letter" Then
+        
+            Cells(row, 26).Value = "100"
+            
+        End If
+        
+    Next row
+
+' Set Supp_Re-edit column to yes or no if there is a cover letter in the support_service column
+
+    For row = 2 To Lrow
+        
+        suppserv = Cells(row, 21).Value
+        
+        If suppserv Like "Re-Edit" Then
+        
+            Cells(row, 28).Value = "Yes"
+            
+        Else
+            
+            Cells(row, 28).Value = "No"
+            
+        End If
+        
+    Next row
+
+' Remove all formatting from spreadsheet
+
+    Range("A1:ZZ1000").ClearFormats
+
+End Sub
+
+
+
+
+
+
+
